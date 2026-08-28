@@ -1,0 +1,23 @@
+theme = nordic
+
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+
+macos-titlebar-style = transparent
+macos-window-shadow = false
+
+window-padding-x = 20
+window-padding-y = 20
+window-padding-balance = true
+window-save-state = always
+
+scrollback-limit = 100000000
+mouse-scroll-multiplier = precision:1,discrete:5
+mouse-hide-while-typing = true
+
+cursor-style = block
+cursor-style-blink = true
+
+keybind = shift+enter=text:\x1b\r
+
+shell-integration-features = cursor,no-sudo,title,ssh-env,ssh-terminfo,path

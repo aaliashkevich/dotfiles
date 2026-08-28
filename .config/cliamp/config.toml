@@ -1,0 +1,13 @@
+theme = "nord"
+provider = "navidrome"
+
+shuffle = true
+repeat = "All"
+speed = 1.00
+visualizer = "Stereo"
+eq_preset = "Flat"
+eq = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+[navidrome]
+url      = "${NAVIDROME_URL}"
+user     = "${NAVIDROME_USER}"
+password = "${NAVIDROME_PASSWORD}"

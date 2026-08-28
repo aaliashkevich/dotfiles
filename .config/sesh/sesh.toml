@@ -1,0 +1,38 @@
+#:schema https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json
+
+blacklist = ["music"]
+
+[default_session]
+preview_command = "sesh preview {}"
+
+[tui]
+show_icons = true
+preview = true
+preview_width = 55
+preview_border = "line"
+
+[[wildcard]]
+pattern = "~/projects/*"
+startup_command = "nvim ."
+windows = ["lazygit", "gh-dash", "shell"]
+
+[[session]]
+name = "dotfiles"
+path = "~/dotfiles"
+startup_command = "nvim ."
+windows = ["lazygit", "gh-dash", "shell"]
+
+[[window]]
+name = "lazygit"
+startup_script = "lazygit"
+
+[[window]]
+name = "gh-dash"
+startup_script = "gh dash"
+
+[[window]]
+name = "shell"
+startup_script = "tmux setw -t \"$TMUX_PANE\" automatic-rename on; clear"
+
+[frecency]
+list_command = "~/.config/sesh/scripts/dirs.sh"
