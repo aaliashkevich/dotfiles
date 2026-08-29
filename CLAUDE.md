@@ -54,9 +54,15 @@ Consequences:
   back as config, so editing it changes nothing. A root-level `.caveman.json` would be worse
   than useless here: stow links it to `~/.caveman.json`, and the hook walks *up* from the cwd,
   so a nominally repo-local file would become a silent global.
-  `statusline-command.sh` renders `model/effort | context | caveman`. It must glob the caveman
-  plugin's cache directory rather than pin it: the path is keyed by commit hash, which differs
-  per machine and changes on every plugin update, so a pinned one silently drops the badge.
+  `statusline-command.sh` renders `Model: … | Effort: … | Context: … | Caveman: …`, all four as
+  plain labelled text. Context is the spent token count (input + output) as `52.8k`, not a `k/k`
+  ratio; the one decimal comes from `awk`, since bash has no float arithmetic. The caveman segment reads `~/.claude/.caveman-active` **directly** rather than shelling
+  out to the plugin's `caveman-statusline.sh`, which renders a `[CAVEMAN:ULTRA]` badge plus a
+  savings suffix and would not match the other segments. That also avoids globbing the plugin
+  cache, whose path is keyed by commit hash and changes on every plugin update. The flag file's
+  hardening is reproduced verbatim — refuse symlinks, cap the read at 64 bytes, strip to
+  `[a-z0-9-]`, whitelist the mode — because the file's bytes are printed to the terminal on
+  every keystroke.
   `themes/nordic.json` is the Nordic theme, selected by `settings.json`'s `"theme":
   "custom:nordic"` — the `custom:` prefix is required, and the slug after it is the filename
   minus `.json`. Shape is `{ name, base, overrides }`; `base` must be one of `dark`, `light`,
