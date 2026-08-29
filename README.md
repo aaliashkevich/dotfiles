@@ -13,7 +13,7 @@ brew install sesh tmux jq bjarneo/cliamp/cliamp neovim tree-sitter-cli glow yazi
 rustup install stable
 sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
 git clone https://github.com/tmux-plugins/tpm ~/dotfiles/.config/tmux/plugins/tpm
-npx skills add JuliusBrussee/caveman
+claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman
 ```
 
 ## setup
