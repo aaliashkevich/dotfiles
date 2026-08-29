@@ -21,18 +21,20 @@ Navidrome values it writes to `~/.config/cliamp/secrets.env` (mode `0600`), and 
 
 ## dependencies
 
-The manifest `setup.sh` installs, for reference:
+Everything `setup.sh` installs, for reference.
 
-```
-brew install --cask ghostty font-jetbrains-mono-nerd-font font-symbols-only-nerd-font claude claude-code
-brew install sesh tmux jq bjarneo/cliamp/cliamp neovim tree-sitter-cli glow yazi ffmpegthumbnailer unar poppler fd ripgrep fzf lazygit lazydocker openjdk d2 zoxide stow rustup dive docker-slim go rtk n
-n lts
-rustup install stable
-sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
-git clone https://github.com/tmux-plugins/tpm ~/dotfiles/.config/tmux/plugins/tpm
-rtk init -g
-claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman
-```
+**Casks** — ghostty, font-jetbrains-mono-nerd-font, font-symbols-only-nerd-font, claude,
+claude-code
 
-Node comes from `n`, not the `node` formula, with `N_PREFIX="$HOME/.local"` so no `sudo` is
-needed — `.zshrc` exports both.
+**Formulae** — sesh, tmux, jq, bjarneo/cliamp/cliamp, neovim, tree-sitter-cli, glow, yazi,
+ffmpegthumbnailer, unar, poppler, fd, ripgrep, fzf, lazygit, lazydocker, openjdk, d2, zoxide,
+stow, rustup, dive, docker-slim, go, rtk, n
+
+**Toolchains** — Node LTS through `n` rather than the `node` formula, with
+`N_PREFIX="$HOME/.local"` so no `sudo` is needed (`.zshrc` exports both); Rust stable through
+`rustup`; and an `openjdk.jdk` symlink into `/Library/Java/JavaVirtualMachines`.
+
+**Plugins** — tpm, cloned into `.config/tmux/plugins/tpm`, and the tmux plugins it installs:
+tmux-sensible, tmux-yank, vim-tmux-navigator. The caveman Claude Code plugin, from the
+`JuliusBrussee/caveman` marketplace. zinit, lazy.nvim and mason bootstrap themselves on the
+first run of their own tool, and `rtk init -g` registers the rtk hook.
