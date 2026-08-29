@@ -4,11 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Personal cross-platform dotfiles, deployed with GNU Stow. `README.md` has the macOS bootstrap
-command list; on Linux the same tooling is installed by the system's own package manager.
+Personal macOS dotfiles, deployed with GNU Stow. `setup.sh` is the bootstrap — one command,
+from an empty machine to a working environment.
 
-Everything here is portable across both platforms — desktop-environment and machine-specific
-configuration is deliberately kept out.
+macOS only. Desktop-environment and machine-specific configuration is deliberately kept out.
 
 ## Deployment model (important)
 
@@ -23,6 +22,23 @@ Consequences:
   listed explicitly. Add new non-dotfile root entries there too.
 - `$HOME/.config` is a *single* symlink to `dotfiles/.config` (stow folded the whole directory).
   Everything under `~/.config` therefore lives in this working tree, tracked or not.
+- `setup.sh` is the install manifest and the bootstrap in one file — the package lists in
+  `README.md` are a copy for reading, so a package added to one must be added to the other.
+  It is listed in `.stow-local-ignore`; without that entry stow links it to `~/setup.sh`.
+  Its order is load-bearing in two places. `stow .` runs **before** `claude plugin install` and
+  before anything else can create `~/.claude` or `~/.config` — `claude` writes a real
+  `~/.claude/settings.json` on first run and stow then refuses the conflict. And `rtk init -g`
+  runs after stow but before any `claude` invocation, because `.claude/settings.json` registers
+  a `PreToolUse` hook calling `rtk hook claude`. Existing non-symlink targets are moved to
+  `~/.dotfiles-backup-<timestamp>/` after a confirmation prompt; a new top-level entry must be
+  added to the script's `STOW_TARGETS` for that check to cover it.
+  nvim's mason and treesitter installs are async and fire no reliable completion event from a
+  headless instance, so the script parks a headless `nvim` on `vim.wait` and polls
+  `~/.local/share/nvim/{mason/bin,site/parser}` until the entry count stops changing. Node comes
+  from `n` with `N_PREFIX="$HOME/.local"` (no `sudo`, unlike n's default `/usr/local`); it is
+  needed because most of mason's `tools` list is npm-based and Homebrew's `neovim` pulls in no
+  node. `sudo` is requested once up front, and only when a step actually needs it — a re-run on
+  a machine that already has Homebrew and the openjdk symlink never asks.
 - `.gitignore` excludes machine-generated state and unmanaged config that live inside stowed dirs
   (`.config/tmux/plugins`, `.config/yazi/plugins`, lazygit's `state.yml`, and almost all of
   `.claude` and `.config/cliamp`). Do not commit those; do not delete them either — they are
@@ -79,6 +95,7 @@ Consequences:
 ## Commands
 
 ```bash
+~/dotfiles/setup.sh                          # full macOS bootstrap; idempotent, re-runnable
 cd ~/dotfiles && stow .                      # (re)link configs into $HOME
 ```
 
@@ -138,7 +155,7 @@ Folding and float borders are native: `vim.lsp.foldexpr()` and `vim.o.winborder`
 - `.zshrc` — plugin manager is **zinit** (self-bootstrapping clone on first run). Order matters:
   zinit lights → `compinit` → `zinit cdreplay -q`. vi-mode is on (`zsh-vi-mode`).
   `tmux_base` function defines the standard session layout; `t` alias attaches or builds it.
-  Platform-specific bits are guarded with `uname -s` checks — keep new ones inside those blocks.
+  The `brew shellenv` block sits inside a `uname -s` Darwin guard and hardcodes `/opt/homebrew`.
   Machine-local secrets/overrides go in `~/.zsh_extra`, sourced last and not tracked here.
 - `.config/ghostty/config` — primary terminal. Flat `key = value`, no sections, no extension.
   `theme = nordic` resolves to `.config/ghostty/themes/nordic`, a hand-written theme file holding
@@ -267,10 +284,10 @@ Folding and float borders are native: `vim.lsp.foldexpr()` and `vim.o.winborder`
   and blocks startup on an interactive `Press <Enter>` prompt — which is what
   `tmux_base`'s auto-launched yazi hits. `yazi --version` is therefore the cheapest config check.
   `.config/yazi/plugins` is gitignored (like `.config/tmux/plugins`); `flavors/` is not.
-- `.config/lazygit/config.yml` — Nordic `gui.theme`. lazygit on macOS defaults its config dir to
+- `.config/lazygit/config.yml` — Nordic `gui.theme`. lazygit defaults its config dir to
   `~/Library/Application Support/lazygit`, which stow cannot reach; `.zshrc` exports
-  `XDG_CONFIG_HOME="$HOME/.config"` so it lands in this repo instead and matches Linux, where
-  lazygit already uses `~/.config/lazygit`. Verify with `lazygit --print-config-dir`.
+  `XDG_CONFIG_HOME="$HOME/.config"` so it lands in this repo instead.
+  Verify with `lazygit --print-config-dir`.
   lazygit writes `state.yml` and `github_pull_requests.json` next to the config — both gitignored.
 - Prompt is hand written in `.zshrc` — starship is gone, and Ghostty has no prompt renderer to
   replace it (`cursor-style` and `shell-integration-features` only reach the cursor and the
@@ -294,5 +311,5 @@ Folding and float borders are native: `vim.lsp.foldexpr()` and `vim.o.winborder`
 Commits are conventional-commit style with an optional scope naming the subsystem:
 `feat(nvim): …`, `fix(tmux): …`, `chore(ghostty): …`, `docs: …`.
 
-When adding a tool to the macOS setup, also update the `brew install` line in `README.md` — that
-list is the install manifest for the platform.
+When adding a tool, add it to the package lists in `setup.sh` — the install manifest — and to
+the copy of those lists in `README.md`.

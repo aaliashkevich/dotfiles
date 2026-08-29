@@ -85,6 +85,7 @@ eval "$(fzf --zsh)"
 
 export EDITOR=nvim
 export XDG_CONFIG_HOME="$HOME/.config"
-export PATH="$HOME/.cargo/bin:$(go env GOPATH)/bin:$PATH"
+export N_PREFIX="$HOME/.local"
+export PATH="$N_PREFIX/bin:$HOME/.cargo/bin:$(go env GOPATH)/bin:$PATH"
 
 [[ ! -f ~/.zsh_extra ]] || source ~/.zsh_extra
