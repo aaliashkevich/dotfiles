@@ -28,7 +28,7 @@ claude-code
 
 **Formulae** — sesh, tmux, jq, bjarneo/cliamp/cliamp, neovim, tree-sitter-cli, glow, yazi,
 ffmpegthumbnailer, unar, poppler, fd, ripgrep, fzf, lazygit, lazydocker, openjdk, d2, zoxide,
-stow, rustup, dive, docker-slim, go, rtk, n
+stow, rustup, dive, docker-slim, go, rtk, n, mactop
 
 **Toolchains** — Node LTS through `n` rather than the `node` formula, with
 `N_PREFIX="$HOME/.local"` so no `sudo` is needed (`.zshrc` exports both); Rust stable through
