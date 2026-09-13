@@ -4,3 +4,5 @@ README.md
 CLAUDE.md
 .DS_Store
 setup.sh
+.codegraph
+codegraph.json

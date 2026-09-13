@@ -38,3 +38,7 @@ stow, rustup, dive, docker-slim, go, rtk, n, mactop
 tmux-sensible, tmux-yank, vim-tmux-navigator. The caveman Claude Code plugin, from the
 `JuliusBrussee/caveman` marketplace. zinit, lazy.nvim and mason bootstrap themselves on the
 first run of their own tool, and `rtk init -g` registers the rtk hook.
+
+**Not from Homebrew** — codegraph, installed by its own `install.sh` into `~/.local/bin` (already on
+`PATH` through `N_PREFIX`) and wired into Claude Code's MCP servers with `codegraph install`.
+Indexing a project is manual: `codegraph init` in its root.

@@ -184,6 +184,21 @@ config.json` → `full`. A root-level `.caveman.json` would be worse than useles
 `~/.caveman.json` and the hook walks *up* from the cwd, making a nominally repo-local file a silent
 global. `~/.claude/.caveman-active` is only the statusline flag, never read back as config.
 
+**codegraph** is not a Homebrew package — `setup.sh` runs upstream's `install.sh`, which unpacks
+into `~/.codegraph/versions/<ver>` and symlinks `~/.local/bin/codegraph`; that directory is already
+on `PATH` via `N_PREFIX`, and the installer edits no rc file. It always overwrites, so the re-run
+path is `codegraph upgrade`. Wiring is a separate step: `codegraph install --yes --target=claude
+--location=global` writes `~/.claude.json` (untracked), `~/.claude/settings.json` and a
+marker-fenced block in `~/.claude/CLAUDE.md` — the last two are **stowed into this repo**. Hence
+`--no-permissions`: the `mcp__codegraph__*` entry is tracked in `.claude/settings.json` instead.
+That flag covers the allow list **only** — the installer still adds a `UserPromptSubmit` hook running
+`codegraph prompt-hook` to the same file, and writes its `CODEGRAPH_START`/`CODEGRAPH_END` block into
+`.claude/CLAUDE.md`. Both are installer-owned and committed; a codegraph release that changes either
+shows up as a working-tree diff, which is expected. `.codegraph` and
+`codegraph.json` are in `.stow-local-ignore` because `codegraph init` inside this repo would
+otherwise put `.codegraph/` at the root and the next `stow .` would link it to `~/.codegraph`, on
+top of the CLI's own bundle directory. Per-project `codegraph init` stays manual.
+
 ## Conventions
 
 Conventional commits with an optional subsystem scope: `feat(nvim): …`, `fix(tmux): …`, `docs: …`.

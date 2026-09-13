@@ -381,6 +381,44 @@ install_claude_plugin() {
     ok "caveman installed"
 }
 
+install_codegraph() {
+    step "codegraph"
+
+    if have codegraph; then
+        codegraph upgrade || warn "codegraph upgrade failed — re-run 'codegraph upgrade' by hand"
+    else
+        # Unpacks into ~/.codegraph/versions/<ver> and symlinks ~/.local/bin/codegraph.
+        # That directory is already on PATH via N_PREFIX, so no rc file needs editing.
+        curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+    fi
+
+    if have codegraph; then
+        ok "$(codegraph --version)"
+    else
+        warn "codegraph not on PATH after install — expected $HOME/.local/bin/codegraph"
+    fi
+}
+
+wire_codegraph() {
+    step "codegraph MCP wiring"
+
+    have codegraph || {
+        warn "no codegraph on PATH — skipping MCP wiring"
+        return
+    }
+
+    have claude || {
+        warn "no 'claude' on PATH — run 'codegraph install' by hand once it is"
+        return
+    }
+
+    # --no-permissions: the allow entry is tracked in .claude/settings.json instead, so the
+    # installer never rewrites a stowed file. It still owns its block in .claude/CLAUDE.md.
+    codegraph install --yes --target=claude --location=global --no-permissions ||
+        warn "codegraph install failed — run 'codegraph install' by hand"
+    ok "MCP server wired into ~/.claude.json"
+}
+
 auth_gh() {
     step "GitHub CLI"
 
@@ -426,6 +464,18 @@ smoke_test() {
         warn "'rtk gain' failed — you may have reachingforthejack/rtk (Rust Type Kit) instead"
     fi
 
+    if have codegraph && codegraph --version >/dev/null 2>&1; then
+        ok "codegraph works ($(codegraph --version 2>/dev/null))"
+    else
+        warn "codegraph missing or not runnable"
+    fi
+
+    if jq -e '.mcpServers.codegraph' "$HOME/.claude.json" >/dev/null 2>&1; then
+        ok "codegraph MCP server registered in ~/.claude.json"
+    else
+        warn "codegraph not in ~/.claude.json — run 'codegraph install'"
+    fi
+
     local missing=() bin
     for bin in sesh tmux nvim cliamp jq gh stow zoxide fzf; do
         have "$bin" || missing+=("$bin")
@@ -468,6 +518,8 @@ bootstrap_zsh
 bootstrap_nvim
 init_rtk
 install_claude_plugin
+install_codegraph
+wire_codegraph
 auth_gh
 smoke_test
 summary
