@@ -17,7 +17,9 @@ package, deploys the configs with `stow`, and drives each tool's own first-run b
 (zinit, tpm, lazy.nvim, mason, treesitter) headlessly. It is idempotent — re-run it any time.
 
 It stops for input three times: the sudo password (Homebrew and the openjdk symlink), the three
-Navidrome values it writes to `~/.config/cliamp/secrets.env` (mode `0600`), and `gh auth login`.
+Navidrome values it writes to `~/.config/cliamp/secrets.env` (mode `0600`), and `gh auth login`,
+which is asked for the `project` and `workflow` scopes. An existing login is not skipped — its
+scopes are re-checked every run and topped up with `gh auth refresh` when either is missing.
 
 ## dependencies
 

@@ -45,6 +45,14 @@ a package added to one must be added to the other. Order is load-bearing:
   `~/.local/share/nvim/{mason/bin,site/parser}` until the entry count stops changing.
 - Node comes from `n` with `N_PREFIX="$HOME/.local"` (no sudo). Needed because most of mason's
   `tools` list is npm-based and Homebrew's `neovim` pulls in no node.
+- `auth_gh` checks token **scopes**, not just whether a login exists. `gh auth login`'s default set
+  omits `project`, so every project-board call (`gh project item-add`, `gh issue edit
+  --add-project`) fails on insufficient scope until `gh auth refresh -s project` runs — and an
+  early return on `gh auth status` would leave an already-authenticated machine stuck there
+  forever. Scopes are parsed out of the `Token scopes:` line of `gh auth status` (it writes to
+  **stderr**), matched with the surrounding quotes so `project` cannot match a longer scope name.
+  A `GH_TOKEN`/`GITHUB_TOKEN` from the environment is warned about instead: `gh auth refresh`
+  refuses to touch a token it did not create.
 
 ## Commands
 

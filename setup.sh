@@ -419,15 +419,43 @@ wire_codegraph() {
     ok "MCP server wired into ~/.claude.json"
 }
 
+# gh auth login hands out its default scope set, which does NOT include 'project' — every
+# project-board operation (gh project item-add, gh issue edit --add-project) then fails on an
+# insufficient-scope error. Checking authentication alone is not enough: a machine that logged in
+# before this function existed keeps its old token forever, so the scopes are re-checked on every
+# run and topped up with gh auth refresh.
 auth_gh() {
     step "GitHub CLI"
 
-    if gh auth status >/dev/null 2>&1; then
-        ok "already authenticated"
+    local scopes=(project workflow)
+
+    local status
+    if ! status=$(gh auth status 2>&1); then
+        gh auth login -s project -s workflow ||
+            warn "gh auth login did not complete — 'gh dash' stays empty until it does"
         return
     fi
 
-    gh auth login || warn "gh auth login did not complete — 'gh dash' stays empty until it does"
+    local missing=()
+    local scope
+    for scope in "${scopes[@]}"; do
+        grep -q "Token scopes:.*'$scope'" <<<"$status" || missing+=("$scope")
+    done
+
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        ok "authenticated with the ${scopes[*]} scopes"
+        return
+    fi
+
+    # A token from the environment is not gh's to rewrite: 'gh auth refresh' rejects it outright.
+    if grep -qE 'GH_TOKEN|GITHUB_TOKEN' <<<"$status"; then
+        warn "token comes from the environment and cannot be refreshed — reissue it with the ${missing[*]} scope(s)"
+        return
+    fi
+
+    info "token is missing the ${missing[*]} scope(s) — opening the browser to refresh it"
+    gh auth refresh -s project -s workflow ||
+        warn "gh auth refresh did not complete — run 'gh auth refresh -s project -s workflow' by hand"
 }
 
 smoke_test() {
