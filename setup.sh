@@ -34,6 +34,7 @@ FORMULAE=(
 WARNINGS=()
 NVIM_PID=""
 SUDO_KEEPALIVE_PID=""
+SUDO_NONINTERACTIVE=0
 
 # ---------------------------------------------------------------- logging ----
 
@@ -56,6 +57,26 @@ die() {
 }
 
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# Group membership as the directory service sees it. A bare `id -Gn` reports the
+# groups this shell was *started* with, so an elevation granted mid-run would
+# never show up there and the wait loop below would never finish.
+is_admin() { id -Gn "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx admin; }
+
+# The exact probe Homebrew's installer runs under NONINTERACTIVE. Passes only if
+# a warm sudo timestamp and a sudoers rule covering mkdir are both in place.
+sudo_probe() { sudo -n -l mkdir >/dev/null 2>&1; }
+
+# SAP Privileges. The binary moved between major versions, so try every path.
+privileges_cli() {
+    local p
+    for p in /usr/local/bin/PrivilegesCLI \
+        /Applications/Privileges.app/Contents/MacOS/PrivilegesCLI \
+        /Applications/Privileges.app/Contents/Resources/PrivilegesCLI; do
+        [ -x "$p" ] && { printf '%s\n' "$p"; return 0; }
+    done
+    return 1
+}
 
 # Wrap a value in single quotes for a file that gets sourced by sh. Without this
 # an unquoted < or > in a password is parsed as a redirection.
@@ -113,6 +134,14 @@ preflight() {
     step "Preflight"
     [ "$(uname -s)" = "Darwin" ] || die "macOS only — on Linux install the same tools with the system package manager."
     ok "repo at $REPO"
+
+    if is_admin; then
+        ok "$USER is an administrator"
+    elif privileges_cli >/dev/null; then
+        ok "$USER is a standard user — Privileges.app is available to elevate"
+    else
+        warn "$USER is a standard user and Privileges.app is absent — steps needing root will be skipped"
+    fi
 }
 
 jdk_link_ok() {
@@ -131,16 +160,48 @@ request_sudo() {
     fi
 
     info "needed to install Homebrew and to link openjdk into /Library/Java/JavaVirtualMachines"
+
+    local cli waited
+    if ! is_admin; then
+        if cli="$(privileges_cli)"; then
+            info "standard user — asking Privileges.app for admin rights"
+            "$cli" --add >/dev/null 2>&1 || true
+
+            waited=0
+            until is_admin || [ "$waited" -ge 15 ]; do
+                sleep 1
+                waited=$((waited + 1))
+            done
+
+            if is_admin; then
+                ok "elevated — elevation expires (commonly after 20 min), re-run '$cli --add' if a later step is refused"
+            else
+                warn "Privileges.app did not grant admin — continuing on sudo alone"
+            fi
+        else
+            warn "standard user and no Privileges.app — continuing on sudo alone"
+        fi
+    fi
+
     sudo -v || die "sudo required"
 
-    # Keep the timestamp warm; brew and nvim steps take longer than sudo's 5 min.
-    while true; do
-        sudo -n true
-        sleep 60
-        kill -0 "$$" 2>/dev/null || exit
-    done 2>/dev/null &
-    SUDO_KEEPALIVE_PID=$!
-    ok "granted"
+    # Homebrew's installer and the keepalive both rely on a passwordless `sudo -n`.
+    # A managed Mac with timestamp_timeout=0 has none, so probe instead of assuming.
+    if sudo_probe; then
+        SUDO_NONINTERACTIVE=1
+
+        # Keep the timestamp warm; brew and nvim steps take longer than sudo's 5 min.
+        while true; do
+            sudo -n true
+            sleep 60
+            kill -0 "$$" 2>/dev/null || exit
+        done 2>/dev/null &
+        SUDO_KEEPALIVE_PID=$!
+        ok "granted"
+    else
+        SUDO_NONINTERACTIVE=0
+        warn "sudo has no reusable timestamp — every sudo call will ask for the password"
+    fi
 }
 
 install_clt() {
@@ -162,8 +223,18 @@ install_homebrew() {
     step "Homebrew"
 
     if ! have brew; then
-        NONINTERACTIVE=1 /bin/bash -c \
-            "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # NONINTERACTIVE makes upstream's have_sudo_access() probe with
+        # `sudo -n -l mkdir`, which can never prompt. Where that fails the installer
+        # aborts with "the user needs to be an Administrator", blaming the group
+        # rather than the probe. The interactive path uses `sudo -v` and can ask.
+        if [ "$SUDO_NONINTERACTIVE" = 1 ]; then
+            NONINTERACTIVE=1 /bin/bash -c \
+                "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        else
+            info "sudo prompts per call — running Homebrew's installer interactively; it waits for one RETURN"
+            /bin/bash -c \
+                "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
     fi
 
     if ! have brew; then
@@ -172,7 +243,7 @@ install_homebrew() {
         eval "$("$prefix/bin/brew" shellenv)"
     fi
 
-    have brew || die "Homebrew install failed"
+    have brew || die "Homebrew install failed — on Apple Silicon upstream supports /opt/homebrew only, and creating it needs root. With sudo locked down the only route left is the unsupported prefix 'git clone https://github.com/Homebrew/brew ~/homebrew', which builds most formulae from source."
     ok "$(brew --version | head -1)"
 }
 
@@ -186,6 +257,15 @@ update_homebrew() {
 install_packages() {
     step "Casks"
     local pkg name
+
+    # A standard user owns neither /Applications nor /Library/Fonts. Both flags are
+    # needed — font casks ignore --appdir and land in the font dir.
+    if ! is_admin; then
+        mkdir -p "$HOME/Applications" "$HOME/Library/Fonts"
+        export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications --fontdir=$HOME/Library/Fonts"
+        warn "standard user — casks go to ~/Applications, fonts to ~/Library/Fonts"
+    fi
+
     for pkg in "${CASKS[@]}"; do
         name="${pkg##*/}"
         if brew list --cask --versions "$name" >/dev/null 2>&1; then
@@ -240,9 +320,17 @@ link_openjdk() {
         return
     fi
 
-    sudo ln -sfn "$(brew --prefix openjdk)/libexec/openjdk.jdk" \
-        /Library/Java/JavaVirtualMachines/openjdk.jdk
-    ok "linked into /Library/Java/JavaVirtualMachines"
+    # Root-only. Without it java still works off JAVA_HOME, so warn rather than
+    # let `set -e` take the rest of the bootstrap down with it.
+    if sudo ln -sfn "$(brew --prefix openjdk)/libexec/openjdk.jdk" \
+        /Library/Java/JavaVirtualMachines/openjdk.jdk; then
+        ok "linked into /Library/Java/JavaVirtualMachines"
+        return
+    fi
+
+    local line='export JAVA_HOME="$(brew --prefix openjdk)/libexec/openjdk"'
+    grep -qsF "$line" "$HOME/.zsh_extra" || printf '%s\n' "$line" >>"$HOME/.zsh_extra"
+    warn "could not link openjdk into /Library/Java/JavaVirtualMachines (needs root) — JAVA_HOME written to ~/.zsh_extra instead"
 }
 
 make_projects_dir() {

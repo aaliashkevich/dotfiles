@@ -21,6 +21,12 @@ Navidrome values it writes to `~/.config/cliamp/secrets.env` (mode `0600`), and 
 which is asked for the `project` and `workflow` scopes. An existing login is not skipped — its
 scopes are re-checked every run and topped up with `gh auth refresh` when either is missing.
 
+On a managed Mac where the account is a *standard* user, the script elevates through
+Privileges.app if it is installed and otherwise carries on with whatever `sudo` allows. Without
+admin rights casks install into `~/Applications` and fonts into `~/Library/Fonts`, and the
+openjdk symlink under `/Library/Java/JavaVirtualMachines` is replaced by a `JAVA_HOME` line in
+`~/.zsh_extra`.
+
 ## dependencies
 
 Everything `setup.sh` installs, for reference.

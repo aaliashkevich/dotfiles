@@ -40,6 +40,21 @@ a package added to one must be added to the other. Order is load-bearing:
   a `PreToolUse` hook calling `rtk hook claude`.
 - Existing non-symlink targets move to `~/.dotfiles-backup-<timestamp>/` after a prompt; a new
   top-level entry must be added to the script's `STOW_TARGETS` for that check to cover it.
+- `NONINTERACTIVE=1` around Homebrew's installer is **conditional**, decided by `sudo_probe`
+  (`sudo -n -l mkdir`, upstream's own test). Under `NONINTERACTIVE` upstream's `have_sudo_access`
+  uses `sudo -n`, which can never prompt, and aborts with *"the user needs to be an
+  Administrator"* — the message blames the group, the trigger is the probe, and it fires on any
+  Mac whose sudoers sets `timestamp_timeout=0` or restricts the allowed commands. When the probe
+  fails the installer runs interactively instead (`sudo -v`, one RETURN keypress) and the sudo
+  keepalive loop is skipped, since its `sudo -n true` could not work either.
+- Root-needing steps degrade instead of aborting for a standard user. `request_sudo` elevates
+  through **Privileges.app** when `privileges_cli` finds it (path differs between 1.x and 2.x —
+  probe all three), then polls `is_admin`; elevation expires on the app's own timer, typically
+  well before the brew steps end. `is_admin` passes `$USER` to `id -Gn` on purpose: argument-less
+  `id -Gn` reports the group set the shell started with and never sees a mid-run elevation.
+  Non-admin also redirects casks with `HOMEBREW_CASK_OPTS` — `--appdir` **and** `--fontdir`, as
+  font casks ignore the former — and turns the `/Library/Java/JavaVirtualMachines` symlink into a
+  warning plus a `JAVA_HOME` line appended to `~/.zsh_extra`.
 - mason and treesitter install asynchronously and fire no reliable completion event headlessly, so
   the script parks a headless `nvim` on `vim.wait` and polls
   `~/.local/share/nvim/{mason/bin,site/parser}` until the entry count stops changing.
