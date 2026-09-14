@@ -36,7 +36,7 @@ claude-code
 
 **Formulae** — sesh, tmux, jq, bjarneo/cliamp/cliamp, neovim, tree-sitter-cli, glow, yazi,
 ffmpegthumbnailer, unar, poppler, fd, ripgrep, fzf, lazygit, lazydocker, openjdk, d2, zoxide,
-stow, rustup, dive, docker-slim, go, rtk, n, mactop
+stow, rustup, dive, docker-slim, go, rtk, n, mactop, gh
 
 **Toolchains** — Node LTS through `n` rather than the `node` formula, with
 `N_PREFIX="$HOME/.local"` so no `sudo` is needed (`.zshrc` exports both); Rust stable through
@@ -46,6 +46,9 @@ stow, rustup, dive, docker-slim, go, rtk, n, mactop
 tmux-sensible, tmux-yank, vim-tmux-navigator. The caveman Claude Code plugin, from the
 `JuliusBrussee/caveman` marketplace. zinit, lazy.nvim and mason bootstrap themselves on the
 first run of their own tool, and `rtk init -g` registers the rtk hook.
+
+**gh extensions** — gh-dash, installed with `gh extension install dlvhdr/gh-dash`; it is not a
+formula, so `brew` never sees it.
 
 **Not from Homebrew** — codegraph, installed by its own `install.sh` into `~/.local/bin` (already on
 `PATH` through `N_PREFIX`) and wired into Claude Code's MCP servers with `codegraph install`.

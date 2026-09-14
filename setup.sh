@@ -28,7 +28,7 @@ CASKS=(
 FORMULAE=(
     sesh tmux jq bjarneo/cliamp/cliamp neovim tree-sitter-cli glow yazi
     ffmpegthumbnailer unar poppler fd ripgrep fzf lazygit lazydocker openjdk
-    d2 zoxide stow rustup dive docker-slim go rtk n mactop
+    d2 zoxide stow rustup dive docker-slim go rtk n mactop gh
 )
 
 WARNINGS=()
@@ -515,6 +515,11 @@ wire_codegraph() {
 auth_gh() {
     step "GitHub CLI"
 
+    if ! have gh; then
+        warn "gh not installed — skipping auth; 'gh dash' stays empty"
+        return
+    fi
+
     local scopes=(project workflow)
 
     local status
@@ -544,6 +549,25 @@ auth_gh() {
     info "token is missing the ${missing[*]} scope(s) — opening the browser to refresh it"
     gh auth refresh -s project -s workflow ||
         warn "gh auth refresh did not complete — run 'gh auth refresh -s project -s workflow' by hand"
+}
+
+# gh-dash ships as a gh extension, not a formula: 'gh extension install' is the only
+# supported route, and it is a no-op-with-error on a machine that already has it.
+install_gh_dash() {
+    step "gh-dash"
+
+    if ! have gh; then
+        warn "gh not installed — skipping gh-dash"
+        return
+    fi
+
+    if gh extension list 2>/dev/null | grep -q 'dlvhdr/gh-dash'; then
+        ok "already installed"
+        return
+    fi
+
+    gh extension install dlvhdr/gh-dash ||
+        warn "gh extension install dlvhdr/gh-dash failed — run it by hand"
 }
 
 smoke_test() {
@@ -637,5 +661,6 @@ install_claude_plugin
 install_codegraph
 wire_codegraph
 auth_gh
+install_gh_dash
 smoke_test
 summary
