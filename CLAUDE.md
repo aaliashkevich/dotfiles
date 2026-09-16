@@ -58,8 +58,14 @@ a package added to one must be added to the other. Order is load-bearing:
 - mason and treesitter install asynchronously and fire no reliable completion event headlessly, so
   the script parks a headless `nvim` on `vim.wait` and polls
   `~/.local/share/nvim/{mason/bin,site/parser}` until the entry count stops changing.
-- Node comes from `n` with `N_PREFIX="$HOME/.local"` (no sudo). Needed because most of mason's
-  `tools` list is npm-based and Homebrew's `neovim` pulls in no node.
+- Node comes from `volta install node@lts` with `VOLTA_HOME="$HOME/.volta"` (no sudo). Needed
+  because most of mason's `tools` list is npm-based and Homebrew's `neovim` pulls in no node.
+  `volta setup` is deliberately **not** run: it appends its own PATH block to `~/.zshrc`, a stow
+  symlink into this repo, giving a permanent working-tree diff plus a duplicate PATH entry —
+  `.zshrc` exports `VOLTA_HOME` and `$VOLTA_HOME/bin` by hand instead, and volta creates
+  `~/.volta` on demand. That entry must stay **ahead of** `$HOME/.local/bin`: a machine migrated
+  off `n` still has `n`'s `node`/`npm`/`npx` sitting there, and they would shadow volta's shims.
+  Nothing removes them — `n uninstall` and `brew uninstall n` are left to the user.
 - `auth_gh` checks token **scopes**, not just whether a login exists. `gh auth login`'s default set
   omits `project`, so every project-board call (`gh project item-add`, `gh issue edit
   --add-project`) fails on insufficient scope until `gh auth refresh -s project` runs — and an
@@ -208,8 +214,9 @@ config.json` → `full`. A root-level `.caveman.json` would be worse than useles
 global. `~/.claude/.caveman-active` is only the statusline flag, never read back as config.
 
 **codegraph** is not a Homebrew package — `setup.sh` runs upstream's `install.sh`, which unpacks
-into `~/.codegraph/versions/<ver>` and symlinks `~/.local/bin/codegraph`; that directory is already
-on `PATH` via `N_PREFIX`, and the installer edits no rc file. It always overwrites, so the re-run
+into `~/.codegraph/versions/<ver>` and symlinks `~/.local/bin/codegraph`; `.zshrc` puts that
+directory on `PATH` (and `install_codegraph` exports it for the script's own run), and the
+installer edits no rc file. It always overwrites, so the re-run
 path is `codegraph upgrade`. Wiring is a separate step: `codegraph install --yes --target=claude
 --location=global` writes `~/.claude.json` (untracked), `~/.claude/settings.json` and a
 marker-fenced block in `~/.claude/CLAUDE.md` — the last two are **stowed into this repo**. Hence

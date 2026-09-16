@@ -28,7 +28,7 @@ CASKS=(
 FORMULAE=(
     sesh tmux jq bjarneo/cliamp/cliamp neovim tree-sitter-cli glow yazi
     ffmpegthumbnailer unar poppler fd ripgrep fzf lazygit lazydocker openjdk
-    d2 zoxide stow rustup dive docker-slim go rtk n mactop gh
+    d2 zoxide stow rustup dive docker-slim go rtk volta mactop gh
 )
 
 WARNINGS=()
@@ -287,17 +287,18 @@ install_packages() {
 }
 
 install_node() {
-    step "Node (via n)"
+    step "Node (via volta)"
 
-    export N_PREFIX="$HOME/.local"
-    mkdir -p "$N_PREFIX/bin"
-    export PATH="$N_PREFIX/bin:$PATH"
+    # No 'volta setup': it appends a PATH block to ~/.zshrc, which is a stow symlink
+    # into this repo. .zshrc exports these two by hand; volta builds ~/.volta on demand.
+    export VOLTA_HOME="$HOME/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
 
-    n lts
+    volta install node@lts
     ok "$(node --version) at $(command -v node)"
 
     if brew list --formula --versions node >/dev/null 2>&1; then
-        warn "Homebrew's node formula is installed and shadows n's node — 'brew uninstall node' to switch over"
+        warn "Homebrew's node formula is installed and shadows volta's shims — 'brew uninstall node' to switch over"
     fi
 }
 
@@ -472,11 +473,14 @@ install_claude_plugin() {
 install_codegraph() {
     step "codegraph"
 
+    mkdir -p "$HOME/.local/bin"
+    export PATH="$HOME/.local/bin:$PATH"
+
     if have codegraph; then
         codegraph upgrade || warn "codegraph upgrade failed — re-run 'codegraph upgrade' by hand"
     else
         # Unpacks into ~/.codegraph/versions/<ver> and symlinks ~/.local/bin/codegraph.
-        # That directory is already on PATH via N_PREFIX, so no rc file needs editing.
+        # .zshrc puts that directory on PATH, so no rc file needs editing.
         curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
     fi
 

@@ -36,11 +36,12 @@ claude-code
 
 **Formulae** — sesh, tmux, jq, bjarneo/cliamp/cliamp, neovim, tree-sitter-cli, glow, yazi,
 ffmpegthumbnailer, unar, poppler, fd, ripgrep, fzf, lazygit, lazydocker, openjdk, d2, zoxide,
-stow, rustup, dive, docker-slim, go, rtk, n, mactop, gh
+stow, rustup, dive, docker-slim, go, rtk, volta, mactop, gh
 
-**Toolchains** — Node LTS through `n` rather than the `node` formula, with
-`N_PREFIX="$HOME/.local"` so no `sudo` is needed (`.zshrc` exports both); Rust stable through
-`rustup`; and an `openjdk.jdk` symlink into `/Library/Java/JavaVirtualMachines`.
+**Toolchains** — Node LTS through `volta` rather than the `node` formula; Volta keeps its
+toolchain in `~/.volta`, so no `sudo` is needed (`.zshrc` exports `VOLTA_HOME` and puts
+`$VOLTA_HOME/bin` first on `PATH`). Rust stable through `rustup`; and an `openjdk.jdk` symlink
+into `/Library/Java/JavaVirtualMachines`.
 
 **Plugins** — tpm, cloned into `.config/tmux/plugins/tpm`, and the tmux plugins it installs:
 tmux-sensible, tmux-yank, vim-tmux-navigator. The caveman Claude Code plugin, from the
@@ -50,6 +51,6 @@ first run of their own tool, and `rtk init -g` registers the rtk hook.
 **gh extensions** — gh-dash, installed with `gh extension install dlvhdr/gh-dash`; it is not a
 formula, so `brew` never sees it.
 
-**Not from Homebrew** — codegraph, installed by its own `install.sh` into `~/.local/bin` (already on
-`PATH` through `N_PREFIX`) and wired into Claude Code's MCP servers with `codegraph install`.
+**Not from Homebrew** — codegraph, installed by its own `install.sh` into `~/.local/bin` (which
+`.zshrc` puts on `PATH`) and wired into Claude Code's MCP servers with `codegraph install`.
 Indexing a project is manual: `codegraph init` in its root.
