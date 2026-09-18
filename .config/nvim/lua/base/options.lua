@@ -2,6 +2,8 @@ vim.opt.guicursor = ""
 
 vim.opt.nu = true
 vim.opt.relativenumber = true
+vim.opt.signcolumn = "no"
+vim.opt.statuscolumn = "%{%v:lua.require('base.statuscolumn').render()%}"
 
 vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
@@ -25,13 +27,8 @@ vim.opt.scrolloff = 10
 
 vim.opt.updatetime = 50
 
-vim.opt.foldcolumn = '1'
-vim.opt.foldlevel = 99
-vim.opt.foldlevelstart = 99
-vim.opt.foldenable = true
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "v:lua.vim.lsp.foldexpr()"
-vim.opt.foldtext = ""
+vim.opt.foldenable = false
+vim.opt.foldmethod = "manual"
 
 vim.opt.winborder = "rounded"
 vim.opt.showmode = false

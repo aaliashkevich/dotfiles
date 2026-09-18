@@ -122,8 +122,36 @@ nvim-treesitter is pinned to `branch = "main"`: `setup()` takes **only** `instal
 from `require("nvim-treesitter").install(...)`, highlighting from an explicit `FileType` autocmd.
 No `ensure_installed`/`highlight`/`auto_install`. Parsers compile with the `tree-sitter` CLI on PATH.
 
-Folding and float borders are native (`vim.lsp.foldexpr()`, `vim.o.winborder`). Do not reintroduce
-nvim-ufo or `vim.lsp.with()`.
+Float borders are native (`vim.o.winborder`) — do not reintroduce `vim.lsp.with()`. Folding is
+**off**: `foldenable = false` plus `foldmethod = "manual"`, because `zc`/`za`/`zm` all set
+`foldenable` back on, so unsetting it alone would not hold; `manual` leaves them no fold to close.
+`zf`/`zF` are `<nop>` in `remap.lua` as the only commands that could still create one. No fold
+plugin (nvim-ufo) and no `vim.lsp.foldexpr()`.
+
+Git signs come from gitsigns (`lua/plugins/gitsigns.lua`), every hunk type drawn as a `█` block so
+colour alone carries the meaning — nordic already defines `GitSigns*`, so no highlight overrides.
+`signs_staged` is a **separate** table and keeps its own symbol defaults, so it has to be
+respecified. `attach_to_untracked = true` is needed for a brand new file to get signs at all;
+gitignored files attach but stay blank.
+
+The gutter is a custom `statuscolumn` (`lua/base/statuscolumn.lua`) with `signcolumn = "no"`,
+because a native sign column cannot reserve a slot: Neovim fills it left to right by descending
+priority with no gaps, so whichever sign a line happens to carry lands leftmost and the git block
+and the diagnostic letter shift around each other. The module draws two fixed 2-cell slots — git
+first, every other sign second, each held open with blanks — picking the highest-priority sign per
+slot the way the native column would. Notes for editing it:
+
+- `sign_text` from `nvim_buf_get_extmarks(..., { type = "sign" })` is **already padded** to 2
+  cells; do not pad it again.
+- `%l` renders only the digits. The trailing `" "` is what the native number column adds, and
+  without it the number sits flush against the buffer text (`textoff` one cell short of native).
+  `%l` does keep the `LineNr`/`LineNrAbove`/`LineNrBelow`/`CursorLineNr` highlights, so those stay
+  in `colorscheme.lua`.
+- Blank slots are painted `CursorLineSign` on the cursor line, else `SignColumn` — native tints
+  the sign cells with it, and skipping that notches the cursorline where a slot is empty.
+- `vim.v.virtnum ~= 0` means a wrapped row or a virtual line; neither repeats signs or numbers.
+- Slot assignment is by `sign_hl_group` prefix, not priority, so gitsigns' `sign_priority` no
+  longer decides anything and is left at its default.
 
 ## Shell / terminal
 

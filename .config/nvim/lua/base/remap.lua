@@ -24,6 +24,9 @@ vim.keymap.set("n", "<leader>Y", "\"+Y")
 
 vim.keymap.set("n", "Q", "<nop>")
 
+vim.keymap.set({ "n", "x" }, "zf", "<nop>")
+vim.keymap.set({ "n", "x" }, "zF", "<nop>")
+
 vim.keymap.set("n", "<leader>c", function()
     require("conform").format({ lsp_format = "fallback" })
 end)
