@@ -1,4 +1,5 @@
 local mason_path = vim.fn.stdpath("data") .. "/mason/bin"
+local vue_ls_path = vim.fn.stdpath("data") .. "/mason/packages/vue-language-server/node_modules/@vue/language-server"
 
 local tools = {
 	"lua_ls",
@@ -18,7 +19,8 @@ local tools = {
 	"terraform-ls",
 	"ansible-language-server",
 	"just-lsp",
-	"ts_ls",
+	"vtsls",
+	"vue_ls",
 	"eslint",
 	"eslint_d",
 	"prettierd",
@@ -79,6 +81,24 @@ return {
 				},
 			})
 
+			vim.lsp.config("vtsls", {
+				filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "vue" },
+				settings = {
+					vtsls = {
+						tsserver = {
+							globalPlugins = {
+								{
+									name = "@vue/typescript-plugin",
+									location = vue_ls_path,
+									languages = { "vue" },
+									configNamespace = "typescript",
+								},
+							},
+						},
+					},
+				},
+			})
+
 			vim.lsp.config("tailwindcss", {
 				on_attach = function(client)
 					client.server_capabilities.documentFormattingProvider = false
@@ -103,12 +123,12 @@ return {
 			vim.api.nvim_create_autocmd("LspAttach", {
 				group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
 				callback = function(event)
-					vim.keymap.set("n", "g<Tab>", vim.lsp.buf.rename, { buffer = event.buf })
+					vim.keymap.set("n", "grd", vim.lsp.buf.definition, { buffer = event.buf })
 				end,
 			})
 
 			wk.add({
-				{ "g<Tab>", desc = "rename symbol" },
+				{ "grd", desc = "goto definition" },
 			})
 		end,
 	},

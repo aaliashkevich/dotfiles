@@ -20,6 +20,7 @@ local parsers = {
     "javascript",
     "typescript",
     "tsx",
+    "vue",
     "sql",
     "go",
     "gomod",

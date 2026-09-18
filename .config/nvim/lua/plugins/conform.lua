@@ -23,6 +23,7 @@ return {
                 typescript = { "eslint_d", "prettierd" },
                 javascriptreact = { "eslint_d", "prettierd" },
                 typescriptreact = { "eslint_d", "prettierd" },
+                vue = { "eslint_d", "prettierd" },
                 go = { "goimports-reviser", "golines", "gofumpt" },
                 templ = { "templ" },
                 hcl = { "hclfmt" },
