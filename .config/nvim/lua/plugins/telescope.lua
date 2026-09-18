@@ -17,8 +17,7 @@ return {
         vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
         vim.keymap.set("n", "<leader>fg", builtin.git_files, {})
         vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
-        vim.keymap.set("n", "<leader>fd", builtin.lsp_document_symbols, {})
-        vim.keymap.set("n", "<leader>fw", builtin.lsp_dynamic_workspace_symbols, {})
+        vim.keymap.set("n", "<leader>fd", builtin.git_status, {})
         vim.keymap.set("n", "<leader>ft", "<cmd>TodoTelescope<CR>")
         vim.keymap.set("n", "<leader>fs", function()
             builtin.grep_string({ search = vim.fn.input("grep > ") })
@@ -53,8 +52,7 @@ return {
             { "<leader>ff", desc = "find file by name" },
             { "<leader>fg", desc = "find git file by name" },
             { "<leader>fb", desc = "find buffer by name" },
-            { "<leader>fd", desc = "find in document" },
-            { "<leader>fw", desc = "find in workspace" },
+            { "<leader>fd", desc = "find in git diff" },
             { "<leader>ft", desc = "find in todos" },
             { "<leader>fs", desc = "find in files" }
         })
