@@ -11,4 +11,11 @@
 printf '%s\n' "$HOME"
 find "$HOME/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | LC_ALL=C sort -f
 
+# Worktrees, so one whose tmux session was killed is still reachable
+# from the picker. Live sessions dedupe against these under sesh's -d.
+{
+    find "$HOME/projects" -mindepth 3 -maxdepth 3 -type d -path '*/.worktrees/*'
+    find "$HOME/dotfiles" -mindepth 2 -maxdepth 2 -type d -path '*/.worktrees/*'
+} 2>/dev/null | LC_ALL=C sort -f
+
 exit 0

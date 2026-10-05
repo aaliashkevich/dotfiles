@@ -186,17 +186,75 @@ rather than editing by hand.
   multibyte titles mid-character. Marquee offset is `EPOCHSECONDS * 2`, so it is stateless. `#` in
   the output is doubled to `##` — tmux reads `#` in `#()` output as a format start.
 
-**sesh** (`.config/sesh/sesh.toml`) — `§` opens `sesh picker -i -d`; `detach-on-destroy off` in
-`tmux.conf` is required by it. sesh has no directory-scan source, so `[frecency] list_command`
-repoints it at `scripts/dirs.sh` (`~` plus depth-1 dirs under `~/projects`), surfacing
+**sesh** (`.config/sesh/sesh.toml`) — `detach-on-destroy off` in `tmux.conf` is required by it.
+sesh has no directory-scan source, so `[frecency] list_command` repoints it at `scripts/dirs.sh`
+(`~`, depth-1 dirs under `~/projects`, plus existing `.worktrees/*` — see below), surfacing
 never-visited projects and dropping zoxide noise. sesh **execs that directly, without a shell**: it
-must be an executable file and must always `exit 0`, or `sesh list` fails outright. The picker's
-`-d` is required, not cosmetic — dedup against live tmux sessions only runs under it. Session
+must be an executable file and must always `exit 0`, or `sesh list` fails outright. Session
 layout is config, not script: `windows = [...]` names `[[window]]` entries, one tmux window each;
 an undefined name is a hard error. sesh always passes `new-window -n`, disabling
 `automatic-rename`, so the scratch window re-enables it with an explicit `-t "$TMUX_PANE"` (the
 session is still detached, so a bare `setw` retargets another one). `tmux_base` uses
 `sesh connect -s dotfiles` — without `-s`, sesh blocks in `attach-session` before reaching `music`.
+
+**`§` picker** (`.config/tmux/scripts/sessionizer.sh`) — fzf over `sesh list -tcz -d --json`, not
+`sesh picker`: the sesh TUI takes no custom keybinds and cannot emit the text you typed (`--query`
+only prefills it). Rows are `icon \t name \t path` with `--with-nth=1,2 --nth=2`, so the path
+travels with the row while only the first two fields show; `-d` is required, not cosmetic — dedup
+against live tmux sessions only runs under it. **Enter** hands the name to `sesh connect` (`-s`
+under `$TMUX`), so configured sessions behave exactly as before. **alt-enter** resolves the
+highlighted row to a main checkout with `rev-parse --git-common-dir` — which answers with the main
+repo even from inside a worktree, so it opens a sibling worktree — then prompts for a name. The
+name is free-form: `PEP-12345` and `spike-auth-rewrite` are equally valid, sanitised to
+`[A-Za-z0-9._/-]` with other bytes folded to `-`.
+Parsing depends on the output shape of `--expect` plus `--print-query`: line 1 query, line 2 key
+(**empty for Enter**), line 3 row. Option+Enter arrives as `alt-enter` with no ghostty setting —
+an Option sequence that produces no printable character is treated as Alt regardless of
+`macos-option-as-alt`, which is why that option stays unset (it would break Option-based Unicode
+input). `ctrl-o` is an alias, and ghostty's `shift+enter=text:\x1b\r` emits the same bytes.
+
+**fzf theme** (`.config/fzf/opts`) — `--color` lines only, no layout or behaviour; `--layout=reverse`
+stays with the caller. `.zshrc` exports `FZF_DEFAULT_OPTS_FILE` at it, and because the file is read
+by the **fzf binary** rather than by the caller, that one export also themes the `Ctrl-R`/`Ctrl-T`
+widgets and fzf-tab's completion menus without either knowing about it. `sessionizer.sh` sets the
+variable itself as well (honouring an existing value) — a tmux popup inherits none of the
+interactive shell's environment. `bg` and `gutter` are left **unset** on purpose: the background then
+comes from tmux's `popup-style` inside the `§` popup and from ghostty's `background` elsewhere, where
+naming one would paint a slightly different rectangle inside the popup. `border` matches
+`popup-border-style` so fzf's preview separator lines up with the popup's own border. An invalid
+colour key makes fzf exit 2 rather than ignore the line, so a typo is loud; `#` comments are fine.
+
+**Worktree sessions** (`.config/tmux/scripts/worktree.sh`) — `<repo>/.worktrees/<NAME>`, session
+`<repo>/<NAME>`, windows nvim / lazygit / `claude --continue` / shell. Idempotent at every step,
+so it is also the re-enter path: the `§` picker routes a `*/.worktrees/*` row here instead of to
+`sesh connect`, and a session killed by hand is rebuilt with the same layout. The session is built
+with tmux here rather than from a `sesh.toml` wildcard because sesh derives a session name from the
+git remote or the directory basename — for a worktree that collides with the main repo's own
+session, and `dir_length` is global so it cannot be narrowed to worktrees. Windows get their
+program through `send-keys`, not as the pane command, so quitting lazygit or claude leaves the
+window alive. Branch base is the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`,
+`master`, `HEAD` that resolves, so a `master` repo needs no flag; an existing local or
+remote-tracking branch of that name is checked out instead of created.
+
+`/.worktrees/` goes in the repo's **`.git/info/exclude`**, not `.gitignore` — a work repo must show
+no diff. Hydration links every path `git ls-files --others --ignored --exclude-standard
+--directory --no-empty-directory` reports, which is exactly "ignored and present", so `.env`,
+`.claude` and local config arrive with no per-project list. `--directory` matters: it collapses a
+fully ignored directory to one entry (`node_modules/`, not 40k files), while a partially tracked
+one (`.claude` here) stays per-file. Three exceptions:
+- `.worktrees` is skipped for **recursion**, not hygiene — linking it hands a worktree a link to
+  its own parent.
+- Build and cache output (`dist`, `.next`, `target`, `coverage`, … ) is skipped because two agents
+  compiling in different worktrees through one linked `dist/` produce *wrong output*, not an error.
+  Per-repo additions go in `.git/worktree-skip`, one glob per line, so nothing project-specific
+  lands in this repo.
+- `node_modules` is cloned with `cp -c -R` (APFS copy-on-write: no disk cost until the trees
+  diverge) because it is the one shared directory an agent writes to on its own, during an install.
+
+A **symlink to an ignored directory is not matched by a `dir/` pattern**, so each linked directory
+is also appended to `info/exclude` as `/<path>` — otherwise it shows up as untracked in the
+worktree. That file is shared by all worktrees, but every path written there is already ignored in
+the main checkout, so the extra lines change nothing for it.
 
 **cliamp** — runs in its own detached `music` session so the player and the IPC socket the
 statusline polls survive closing the `prefix ±` popup (`scripts/cliamp-popup.sh`). `±` is a toggle:
@@ -234,6 +292,17 @@ Context is spent tokens (`52.8k`), the decimal via `awk`. The caveman segment re
 script, which renders a mismatched badge and would need globbing a plugin cache path keyed by commit
 hash. Its hardening is reproduced verbatim — refuse symlinks, cap the read at 64 bytes, strip to
 `[a-z0-9-]`, whitelist the mode — because those bytes reach the terminal on every keystroke.
+
+Permission rules in `settings.json` must be written in **rtk form**. The `PreToolUse` hook returns
+`updatedInput` and *no* `permissionDecision`, so matching happens against the rewritten command: a
+rule spelled `Bash(git status:*)` can never fire, it has to be `Bash(rtk git status:*)`. Only
+read-only git verbs are pre-allowed; anything that writes history still prompts. Two more
+consequences of the rewrite worth knowing when an agent in a worktree looks stuck: approvals in
+`~/.claude.json` are keyed by **directory**, so a fresh worktree path inherits none of the main
+checkout's (hydration linking a gitignored `.claude/` carries `settings.local.json` over, which is
+part of why that link matters), and `defaultMode: "plan"` means every one of those sessions starts
+in plan mode, where commits are refused outright. rtk itself is fine in a worktree — `rtk git
+status/add/commit`, heredoc messages included, all work against a `.git` *file*.
 
 The caveman plugin's default mode is pinned in `.config/caveman/config.json`, not under `.claude/`:
 its hook resolves `$CAVEMAN_DEFAULT_MODE` → repo-local `.caveman.json` → `$XDG_CONFIG_HOME/caveman/

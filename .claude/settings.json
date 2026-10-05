@@ -2,7 +2,13 @@
   "permissions": {
     "defaultMode": "plan",
     "allow": [
-      "mcp__codegraph__*"
+      "mcp__codegraph__*",
+      "Bash(rtk git status:*)",
+      "Bash(rtk git diff:*)",
+      "Bash(rtk git log:*)",
+      "Bash(rtk git show:*)",
+      "Bash(rtk git branch:*)",
+      "Bash(rtk git worktree list:*)"
     ]
   },
   "model": "opus[1m]",

@@ -1,0 +1,21 @@
+# Nordic palette for every fzf invocation. Read by the fzf binary itself through
+# FZF_DEFAULT_OPTS_FILE, so it reaches the Ctrl-R/Ctrl-T widgets and fzf-tab's
+# completion menus without either of them knowing about it.
+#
+# Colours are nordic.nvim, the same source as .config/ghostty/themes/nordic:
+# #88C0D0 accent, #81A1C1 secondary, #3B4252 selection, #4C566A dimmed.
+#
+# Theme only -- no layout or behaviour, those stay with the caller. An invalid
+# key makes fzf exit 2 rather than ignore the line, so a typo is loud.
+#
+# bg and gutter are deliberately unset: inside the § popup the background then
+# comes from tmux's popup-style (#242933), and in a normal shell from ghostty's
+# background. Naming one here paints a slightly different rectangle inside the
+# popup instead. border matches popup-border-style, so fzf's preview separator
+# lines up with the popup's own border.
+
+--color=fg:#C0C8D8,fg+:#ECEFF4,hl:#88C0D0,hl+:#88C0D0
+--color=bg+:#3B4252,gutter:-1
+--color=prompt:#88C0D0,pointer:#88C0D0,marker:#A3BE8C,spinner:#B48EAD
+--color=info:#81A1C1,border:#81A1C1,label:#81A1C1,separator:#3B4252,header:#4C566A
+--color=query:#C0C8D8
