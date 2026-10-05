@@ -14,21 +14,17 @@ preview_border = "line"
 [[wildcard]]
 pattern = "~/projects/*"
 startup_command = "nvim ."
-windows = ["lazygit", "gh-dash", "shell"]
+windows = ["lazygit", "shell"]
 
 [[session]]
 name = "dotfiles"
 path = "~/dotfiles"
 startup_command = "nvim ."
-windows = ["lazygit", "gh-dash", "shell"]
+windows = ["lazygit", "shell"]
 
 [[window]]
 name = "lazygit"
 startup_script = "lazygit"
-
-[[window]]
-name = "gh-dash"
-startup_script = "gh dash"
 
 [[window]]
 name = "shell"

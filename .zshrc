@@ -85,6 +85,9 @@ eval "$(fzf --zsh)"
 
 export EDITOR=nvim
 export XDG_CONFIG_HOME="$HOME/.config"
+# Read by the fzf binary at run time, not by `fzf --zsh` above, so the order
+# here does not matter -- and one export themes the widgets and fzf-tab too.
+export FZF_DEFAULT_OPTS_FILE="$XDG_CONFIG_HOME/fzf/opts"
 export CODEGRAPH_TELEMETRY=0
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:$(go env GOPATH)/bin:$PATH"
