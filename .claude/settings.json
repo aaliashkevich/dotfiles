@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "plan",
     "allow": [
       "mcp__codegraph__*",
       "Bash(rtk git status:*)",
@@ -9,10 +8,10 @@
       "Bash(rtk git show:*)",
       "Bash(rtk git branch:*)",
       "Bash(rtk git worktree list:*)"
-    ]
+    ],
+    "defaultMode": "plan"
   },
   "model": "claude-opus-5-5[1m]",
-  "effortLevel": "high",
   "hooks": {
     "PreToolUse": [
       {
@@ -52,11 +51,17 @@
       }
     }
   },
+  "effortLevel": "high",
   "promptSuggestionEnabled": false,
   "theme": "custom:nordic",
   "editorMode": "vim",
   "preferredNotifChannel": "auto",
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": false,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    }
+  }
 }
