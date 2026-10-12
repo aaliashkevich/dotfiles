@@ -9,6 +9,17 @@ SEP="${DIM} | ${RESET}"
 model_name=$(printf '%s' "$input" | jq -r '.model.display_name // .model.id // ""')
 effort=$(printf '%s' "$input" | jq -r '.effort.level // ""')
 
+usage_pct=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty | round')
+usage_reset=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.resets_at // empty | floor')
+
+usage_seg=""
+if [ -n "$usage_pct" ]; then
+    usage_seg="Usage: ${usage_pct}%"
+    left=$((${usage_reset:-0} - $(date +%s)))
+    if [ "$left" -gt 0 ]; then
+        usage_seg="${usage_seg} (resets in $(printf '%02dh:%02dm' $((left / 3600)) $((left % 3600 / 60))))"
+    fi
+fi
 model_seg=""
 [ -n "$model_name" ] && model_seg="Model: ${model_name}"
 effort_seg=""
@@ -39,6 +50,7 @@ add_segment() {
         out="${out}${SEP}${seg}"
     fi
 }
+add_segment "$usage_seg"
 add_segment "$model_seg"
 add_segment "$effort_seg"
 add_segment "$context_seg"
