@@ -286,8 +286,10 @@ reloads live on write. `rainbow_*` and `clawd_*` are left at base values on purp
 Code caps itself at 256 colours whenever `$TMUX` is set — the variable alone, not `TERM`, and not
 fixable from `tmux.conf`.
 
-`statusline-command.sh` renders `Model | Effort | Context | Caveman` as plain labelled text;
-Context is spent tokens (`52.8k`), the decimal via `awk`. The caveman segment reads
+`statusline-command.sh` renders `Usage | Model | Effort | Context | Caveman` as plain labelled text;
+Usage is the 5-hour `rate_limits` percentage plus a `resets in HHh:MMm` countdown, absent (and
+hidden) for API-key sessions and before the first response. `refreshInterval: 60` in
+`settings.json` keeps the countdown moving while idle. Context is spent tokens (`52.8k`), the decimal via `awk`. The caveman segment reads
 `~/.claude/.caveman-active` **directly** rather than shelling out to the plugin's own statusline
 script, which renders a mismatched badge and would need globbing a plugin cache path keyed by commit
 hash. Its hardening is reproduced verbatim — refuse symlinks, cap the read at 64 bytes, strip to
