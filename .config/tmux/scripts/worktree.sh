@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Create (or re-enter) a named git worktree and its tmux session. The name is
-# free-form -- an issue id (EXAMPLE-12345) or a feature name (spike-auth) alike.
+# free-form -- an issue id (EXAMPLE-12345) or a feature name (spike-auth) alike --
+# except "#<number>", which checks out that GitHub pull request's own branch
+# into .worktrees/pr-<number> instead of creating a new one.
 #
 #   worktree.sh <repo> <name>
+#   worktree.sh <repo> '#<pr>'
 #
 # Every step is idempotent, so this is both the create path and the re-attach
 # path: a session killed by hand is rebuilt with the same layout, and a worktree
@@ -24,6 +27,14 @@ usage() {
 [ -d "$1" ] || usage
 
 repo=$(cd "$1" && pwd -P)
+
+# "#" is tested before sanitising, which would fold it to "-". The directory
+# drops it too: a "#" in a session name reads as a tmux format.
+pr=
+if [[ $2 =~ ^#([0-9]+)$ ]]; then
+	pr=${BASH_REMATCH[1]}
+	set -- "$1" "pr-$pr"
+fi
 
 # Keep what git and tmux both tolerate. The branch keeps "/" (feature/EXAMPLE-1),
 # the directory name flattens it so the worktree stays one level deep.
@@ -124,7 +135,21 @@ base_ref() {
 	done
 }
 
+fail() {
+	tmux display-message "worktree: $1" 2>/dev/null || true
+	printf 'worktree: %s\n' "$1" >&2
+	exit 1
+}
+
 create_worktree() {
+	# gh resolves the head branch, sets its upstream (a fork's included, so a
+	# push lands on the PR) and fetches by itself.
+	if [ -n "$pr" ]; then
+		(cd "$repo" && gh pr checkout "$pr" --worktree "$worktree") ||
+			fail "gh pr checkout #$pr failed"
+		return
+	fi
+
 	# So a new worktree does not branch off a week-old origin/main. One network
 	# call, never fatal.
 	if git -C "$repo" remote get-url origin >/dev/null 2>&1; then

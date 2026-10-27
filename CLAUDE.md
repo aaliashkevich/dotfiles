@@ -234,7 +234,11 @@ session, and `dir_length` is global so it cannot be narrowed to worktrees. Windo
 program through `send-keys`, not as the pane command, so quitting lazygit or claude leaves the
 window alive. Branch base is the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`,
 `master`, `HEAD` that resolves, so a `master` repo needs no flag; an existing local or
-remote-tracking branch of that name is checked out instead of created.
+remote-tracking branch of that name is checked out instead of created. A name of `#<number>` is a
+GitHub PR instead: `gh pr checkout <n> --worktree` puts the PR's own head branch in `pr-<n>`, with
+upstream and push remote set by gh (a fork PR pushes to the fork). The `#` is matched before
+sanitising and kept out of the directory, since tmux reads `#` in a session name as a format; the
+`pr-<n>` row then re-enters like any other worktree.
 
 `/.worktrees/` goes in the repo's **`.git/info/exclude`**, not `.gitignore` — a work repo must show
 no diff. Hydration links every path `git ls-files --others --ignored --exclude-standard

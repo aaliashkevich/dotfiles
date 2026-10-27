@@ -88,7 +88,7 @@ existing=$(git -C "$repo" worktree list --porcelain |
 picked=$({ [ -n "$existing" ] && printf '%s\n' "$existing"; } | fzf \
 	--print-query --layout=reverse \
 	--prompt "worktree name in ${repo##*/}> " \
-	--header 'type a name, or pick an existing worktree' || true)
+	--header 'type a name or #<pr>, or pick an existing worktree' || true)
 
 worktree_name=$(sed -n 2p <<<"$picked")
 [ -n "$worktree_name" ] || worktree_name=$(sed -n 1p <<<"$picked")
